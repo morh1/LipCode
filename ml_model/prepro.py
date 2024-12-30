@@ -185,27 +185,33 @@ def preprocess_for_training(frames, transcriptions):
 
 
 if __name__ == "__main__":
-    """
-    Main entry point of the script to process the dataset.
-    This part is executed when the script is run directly.
-    """
-    # Directory paths
-    videos_dir = "data/raw"  # Directory where video files are stored
-    transcriptions_file = "data/transcriptions.csv"  # Path to CSV containing video filenames and transcriptions
-    train_dir = "data/train"  # Directory to save the training data
-    val_dir = "data/validation"  # Directory to save the validation data
+    video_path = "san_tests/raw/test_video.mp4"  # Path to your test video
+    transcription = "hello world"  # Example transcription
+    output_dir = "san_tests/processed"
+    video_name = "test_video"
 
-    # Process the dataset by extracting frames and saving them with corresponding transcriptions.
-    process_and_save_data(videos_dir, transcriptions_file, train_dir, val_dir)
+    # Ensure the output directory exists
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    # Load the processed data
-    frames, transcriptions = load_data("data/train")
+    # Preprocess the video
+    preprocess_video(video_path, transcription, output_dir, video_name)
 
-    # Preprocess the data for training
-    frames, encoded_transcriptions, X_train, X_val, y_train, y_val, label_encoder = preprocess_for_training(frames,
-                                                                                                            transcriptions)
+    # Load the processed .npz file
+    npz_file = f"{output_dir}/{video_name}.npz"
+    data = np.load(npz_file)
 
-    # Now, the data is ready to be fed into the model
-    print(f"Training data shape: {X_train.shape}")
-    print(f"Validation data shape: {X_val.shape}")
-    print(f"Number of classes: {len(label_encoder.classes_)}")
+    # Extract the frames and transcription
+    frames = data['frames']
+    saved_transcription = data['transcription']
+
+    # Print the transcription to verify correctness
+    print(f"Transcription: {saved_transcription}")
+
+    # Display the extracted mouth frames
+    for i, frame in enumerate(frames):
+        cv2.imshow(f"Mouth Frame {i}", frame)
+        if cv2.waitKey(500) & 0xFF == ord('q'):  # Show each frame for 500ms, press 'q' to quit
+            break
+    cv2.destroyAllWindows()
+
