@@ -1,0 +1,20 @@
+/* Import Tailwind base, components, and utilities */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Add any global custom styles if needed */
+body {
+  margin: 0; /* Reset default margin */
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif; /* Set a default font */
+}
+
+a {
+  text-decoration: none; /* Remove default underline from links */
+  color: inherit; /* Make links inherit color */
+}
+
+button {
+  font-family: inherit; /* Ensure buttons use the same font as the parent */
+  cursor: pointer; /* Set the pointer cursor for buttons */
+}
