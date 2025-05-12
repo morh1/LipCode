@@ -1,37 +1,27 @@
-/**
- * server.js
- * This is the main entry point for my server-side application.
- * It initializes an Express app, applies middleware (CORS, JSON body parsing),
- * and mounts the routes. Finally, it starts listening on a specified port.
- */
-
-require('dotenv').config();  // Loads environment variables from .env
+require('dotenv').config();
 const express = require('express');
-const passport = require('./config/passport'); // Import our Passport configuration
+const passport = require('./config/passport');
 const cors = require('cors');
+
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const uploadRoutes = require('./routes/uploadRoutes'); // ✅ ADD THIS
+
 const app = express();
 
 // Initialize Passport (no sessions used)
 app.use(passport.initialize());
 
 // Middleware
-app.use(cors());             // Enables Cross-Origin Resource Sharing
-app.use(express.json());     // Parses incoming JSON requests
+app.use(cors());
+app.use(express.json());
 
-// attaches the routes from authRoutes.js to the path /api/auth.
+// Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/upload', uploadRoutes); // ✅ ADD THIS
 
-/**
- * Server Port Configuration
- * - Either use a PORT defined in .env or default to 5000
- */
 const PORT = process.env.PORT || 5000;
 
-/**
- * Start the Express server
- */
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
