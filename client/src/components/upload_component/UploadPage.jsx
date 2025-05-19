@@ -6,9 +6,53 @@ import signbtnImage from '/src/assets/signbtn.png';
 import { Btn } from '../Btn.jsx';
 
 const UploadPage = () => {
+  const [file, setFile] = React.useState(null);
+  const [transcript, setTranscript] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+
   const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    console.log("Selected file:", file);
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+    console.log("✅ File selected:", selectedFile.name);
+    setFile(selectedFile);
+    setTranscript("");
+    setError("");
+  };
+
+  const handleConvertClick = async () => {
+    if (!file) {
+      setError("Please upload a video first.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setTranscript("");
+
+    try {
+      const formData = new FormData();
+      formData.append("video", file);
+
+      console.log("📤 Uploading video...");
+      const response = await fetch("http://localhost:5000/api/upload/video", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("✅ Inference result:", data);
+      setTranscript(data.transcript || "No transcript returned.");
+    } catch (err) {
+      console.error("❌ Upload or inference failed:", err);
+      setError("An error occurred during upload or processing.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -27,21 +71,35 @@ const UploadPage = () => {
         </h1>
 
         <h2 className="relative mt-6 ml-16 text-2xl font-bold text-white max-md:ml-5">
-          LipCode will recognized your words and generate a transcript
+          LipCode will recognize your words and generate a transcript
         </h2>
 
         <UploadPlaceholder onFileSelect={handleFileSelect} />
+
         <button
-            type="button"
-            className="relative flex justify-center items-center mx-auto w-[250px] h-[50px] mt-6 whitespace-nowrap rounded-xl cursor-pointer"
-            style={{
-              backgroundImage: `url(${signbtnImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          >
-            <span className="text-white text-2xl font-bold z-10">convert to text</span>
-          </button>
+          type="button"
+          onClick={handleConvertClick}
+          className="relative flex justify-center items-center mx-auto w-[250px] h-[50px] mt-6 whitespace-nowrap rounded-xl cursor-pointer"
+          style={{
+            backgroundImage: `url(${signbtnImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        >
+          <span className="text-white text-2xl font-bold z-10">convert to text</span>
+        </button>
+
+        {loading && (
+          <p className="text-yellow-300 text-xl text-center mt-4">⏳ Processing video...</p>
+        )}
+
+        {transcript && (
+          <p className="text-green-300 text-xl text-center mt-4">📝 {transcript}</p>
+        )}
+
+        {error && (
+          <p className="text-red-500 text-xl text-center mt-4">{error}</p>
+        )}
       </div>
     </section>
   );
