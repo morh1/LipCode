@@ -1,23 +1,27 @@
 "use client";
-import * as React from "react";
+import React, { useState } from "react";
 import { Logo } from "../Logo.jsx";
-import UploadPlaceholder from "./UploadPlaceholder";
-import signbtnImage from '/src/assets/signbtn.png';
-import { Btn } from '../Btn.jsx';
+import signbtnImage from "/src/assets/signbtn.png";
+import { jsPDF } from "jspdf";
 
 const UploadPage = () => {
-  const [file, setFile] = React.useState(null);
-  const [transcript, setTranscript] = React.useState("");
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
+  const [file, setFile] = useState(null);
+  const [transcript, setTranscript] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [transcriptReady, setTranscriptReady] = useState(false);
 
-  const handleFileSelect = (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
-    console.log("✅ File selected:", selectedFile.name);
-    setFile(selectedFile);
-    setTranscript("");
-    setError("");
+  const handleFileSelect = (event) => {
+    const selectedFile = event.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setTranscript("");
+      setTranscriptReady(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    document.getElementById("video-upload").click();
   };
 
   const handleConvertClick = async () => {
@@ -29,12 +33,12 @@ const UploadPage = () => {
     setLoading(true);
     setError("");
     setTranscript("");
+    setTranscriptReady(false);
 
     try {
       const formData = new FormData();
       formData.append("video", file);
 
-      console.log("📤 Uploading video...");
       const response = await fetch("http://localhost:5000/api/upload/video", {
         method: "POST",
         body: formData,
@@ -45,14 +49,37 @@ const UploadPage = () => {
       }
 
       const data = await response.json();
-      console.log("✅ Inference result:", data);
-      setTranscript(data.transcript || "No transcript returned.");
+      const result = data.transcript || "No transcript returned.";
+      setTranscript(result);
+      setTranscriptReady(true);
     } catch (err) {
       console.error("❌ Upload or inference failed:", err);
       setError("An error occurred during upload or processing.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+
+    const margin = 10;
+    const pageHeight = doc.internal.pageSize.height;
+    const lineHeight = 10;
+    let y = margin;
+
+    const lines = doc.splitTextToSize(transcript, 180);
+
+    lines.forEach((line) => {
+      if (y + lineHeight > pageHeight - margin) {
+        doc.addPage();
+        y = margin;
+      }
+      doc.text(line, margin, y);
+      y += lineHeight;
+    });
+
+    doc.save("transcript.pdf");
   };
 
   return (
@@ -74,32 +101,77 @@ const UploadPage = () => {
           LipCode will recognize your words and generate a transcript
         </h2>
 
-        <UploadPlaceholder onFileSelect={handleFileSelect} />
+        <div className="mt-20 mx-auto text-center flex flex-col items-center space-y-10">
+          <button
+            type="button"
+            onClick={triggerFileInput}
+            className="bg-white text-black px-12 py-3 rounded-xl font-semibold text-lg hover:bg-gray-200 transition-all"
+          >
+            {file ? `✅ Video Uploaded: ${file.name}` : "📤 Choose a Video"}
+          </button>
 
-        <button
-          type="button"
-          onClick={handleConvertClick}
-          className="relative flex justify-center items-center mx-auto w-[250px] h-[50px] mt-6 whitespace-nowrap rounded-xl cursor-pointer"
-          style={{
-            backgroundImage: `url(${signbtnImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <span className="text-white text-2xl font-bold z-10">convert to text</span>
-        </button>
+          <input
+            id="video-upload"
+            type="file"
+            accept="video/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
 
-        {loading && (
-          <p className="text-yellow-300 text-xl text-center mt-4">⏳ Processing video...</p>
-        )}
+          {/* Model A */}
+          <button
+            type="button"
+            onClick={transcriptReady ? handleDownloadPDF : handleConvertClick}
+            disabled={!file}
+            className={`relative flex justify-center items-center w-[250px] h-[50px] whitespace-nowrap rounded-xl cursor-pointer ${
+              !file ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            style={{
+              backgroundImage: `url(${signbtnImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <span className="text-white text-2xl font-bold z-10">
+              {transcriptReady ? "Download PDF" : "Model A"}
+            </span>
+          </button>
 
-        {transcript && (
-          <p className="text-green-300 text-xl text-center mt-4">📝 {transcript}</p>
-        )}
+          {/* Model B */}
+          <button
+            type="button"
+            onClick={handleConvertClick}
+            disabled={!file}
+            className={`relative flex justify-center items-center w-[250px] h-[50px] whitespace-nowrap rounded-xl cursor-pointer ${
+              !file ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            style={{
+              backgroundImage: `url(${signbtnImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
+          >
+            <span className="text-white text-2xl font-bold z-10">Model B</span>
+          </button>
+        </div>
 
-        {error && (
-          <p className="text-red-500 text-xl text-center mt-4">{error}</p>
-        )}
+        <div className="p-6 mt-10 mx-auto text-center flex flex-col items-center space-y-6">
+          {loading && (
+            <p className="text-yellow-300 text-xl text-center mt-6">
+              ⏳ Processing video...
+            </p>
+          )}
+
+          {transcript && (
+            <p className="text-green-300 text-xl text-center mt-6">
+              📝 {transcript}
+            </p>
+          )}
+
+          {error && (
+            <p className="text-red-500 text-xl text-center mt-6">{error}</p>
+          )}
+        </div>
       </div>
     </section>
   );
