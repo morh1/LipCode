@@ -11,6 +11,11 @@ const passport = require('./config/passport'); // Import our Passport configurat
 const cors = require('cors');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+<<<<<<< Updated upstream
+=======
+const uploadRoutes = require('./routes/uploadRoutes');
+
+>>>>>>> Stashed changes
 const app = express();
 
 // Initialize Passport (no sessions used)
