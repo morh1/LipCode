@@ -3,16 +3,24 @@ import cv2
 import dlib
 import numpy as np
 
-BASE_DATA_DIR = "data"
-OUTPUT_DIR = os.path.join(BASE_DATA_DIR, "processed")
+# === Paths relative to current script ===
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+OUTPUT_DIR = os.path.join(BASE_DIR, "processed")
+PREDICTOR_PATH = os.path.join("utility", "shape_predictor_68_face_landmarks.dat")
+if not os.path.isfile(PREDICTOR_PATH):
+    raise FileNotFoundError("Missing shape_predictor_68_face_landmarks.dat")
+# === Ensure processed directory exists ===
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-predictor_path = "shape_predictor_68_face_landmarks.dat"
-if not os.path.exists(predictor_path):
+if not os.path.exists(PREDICTOR_PATH):
+    print("📂 Current working directory:", os.getcwd())
+    print("📄 Looking for:", PREDICTOR_PATH)
+    print("📄 Exists?", os.path.exists(PREDICTOR_PATH))
     raise FileNotFoundError("Missing shape_predictor_68_face_landmarks.dat")
 
+# Load face detector and shape predictor
 detector = dlib.get_frontal_face_detector()
-predictor = dlib.shape_predictor(predictor_path)
+predictor = dlib.shape_predictor(PREDICTOR_PATH)
 
 def extract_mouth(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)

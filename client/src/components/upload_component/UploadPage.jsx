@@ -9,14 +9,16 @@ const UploadPage = () => {
   const [transcript, setTranscript] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [transcriptReady, setTranscriptReady] = useState(false);
+  const [transcriptAReady, setTranscriptAReady] = useState(false);
+  const [transcriptBReady, setTranscriptBReady] = useState(false);
 
   const handleFileSelect = (event) => {
     const selectedFile = event.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
       setTranscript("");
-      setTranscriptReady(false);
+      setTranscriptAReady(false);
+      setTranscriptBReady(false);
     }
   };
 
@@ -33,7 +35,8 @@ const UploadPage = () => {
     setLoading(true);
     setError("");
     setTranscript("");
-    setTranscriptReady(false);
+    setTranscriptAReady(false);
+    setTranscriptBReady(false);
 
     try {
       const formData = new FormData();
@@ -51,10 +54,47 @@ const UploadPage = () => {
       const data = await response.json();
       const result = data.transcript || "No transcript returned.";
       setTranscript(result);
-      setTranscriptReady(true);
+      setTranscriptAReady(true);
     } catch (err) {
       console.error("❌ Upload or inference failed:", err);
       setError("An error occurred during upload or processing.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConvertClickB = async () => {
+    if (!file) {
+      setError("Please upload a video first.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setTranscript("");
+    setTranscriptAReady(false);
+    setTranscriptBReady(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("video", file);
+
+      const response = await fetch("http://localhost:5000/api/upload/videoB", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+      const result = data.transcript || "No transcript returned.";
+      setTranscript(result);
+      setTranscriptBReady(true);
+    } catch (err) {
+      console.error("❌ Model B upload or inference failed:", err);
+      setError("An error occurred during Model B processing.");
     } finally {
       setLoading(false);
     }
@@ -118,10 +158,10 @@ const UploadPage = () => {
             onChange={handleFileSelect}
           />
 
-          {/* Model A */}
+          {/* Model A Button */}
           <button
             type="button"
-            onClick={transcriptReady ? handleDownloadPDF : handleConvertClick}
+            onClick={transcriptAReady ? handleDownloadPDF : handleConvertClick}
             disabled={!file}
             className={`relative flex justify-center items-center w-[250px] h-[50px] whitespace-nowrap rounded-xl cursor-pointer ${
               !file ? "opacity-50 cursor-not-allowed" : ""
@@ -133,14 +173,14 @@ const UploadPage = () => {
             }}
           >
             <span className="text-white text-2xl font-bold z-10">
-              {transcriptReady ? "Download PDF" : "Model A"}
+              {transcriptAReady ? "Download PDF" : "Model A"}
             </span>
           </button>
 
-          {/* Model B */}
+          {/* Model B Button */}
           <button
             type="button"
-            onClick={handleConvertClick}
+            onClick={transcriptBReady ? handleDownloadPDF : handleConvertClickB}
             disabled={!file}
             className={`relative flex justify-center items-center w-[250px] h-[50px] whitespace-nowrap rounded-xl cursor-pointer ${
               !file ? "opacity-50 cursor-not-allowed" : ""
@@ -151,7 +191,9 @@ const UploadPage = () => {
               backgroundPosition: "center",
             }}
           >
-            <span className="text-white text-2xl font-bold z-10">Model B</span>
+            <span className="text-white text-2xl font-bold z-10">
+              {transcriptBReady ? "Download PDF" : "Model B"}
+            </span>
           </button>
         </div>
 
